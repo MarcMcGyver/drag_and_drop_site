@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Geschenke mit Schleifen</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 15px;
+        background: #f0f0f0;
+        font-family: Arial, sans-serif;
+
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: stretch;
+        height: 100vh;
+        gap: 15px;
+        box-sizing: border-box;
+    }
+
+    .side {
+        width: 15%;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .side img {
+        width: 100%;
+        max-width: 180px;
+        border-radius: 10px;
+        border: 2px solid #aaa;
+        background: white;
+        cursor: grab;
+    }
+
+    .droparea {
+        width: 70%;
+        height: 100%;
+        background: white;
+        border: 3px dashed #777;
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    .droparea.active {
+        border-color: #4CAF50;
+    }
+
+    .drop-img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 2px solid #333;
+        position: absolute;
+        cursor: grab;
+        touch-action: none;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- Linke Bilder (deine eigenen) -->
+<div class="side">
+    <img src="bilder/slice1.png" draggable="true">
+    <img src="bilder/slice2.png" draggable="true">
+    <img src="bilder/slice3.png" draggable="true">
+</div>
+
+<!-- Drop-Bereich -->
+<div class="droparea" id="droparea"></div>
+
+<!-- Rechte Bilder (deine eigenen) -->
+<div class="side">
+    <img src="bilder/slice4.png" draggable="true">
+    <img src="bilder/slice5.png" draggable="true">
+    <img src="bilder/slice6.png" draggable="true">
+</div>
+
+<script>
+let draggedImg = null;
+
+document.querySelectorAll(".side img").forEach(img => {
+    img.addEventListener("dragstart", () => {
+        draggedImg = img;
+    });
+});
+
+const droparea = document.getElementById("droparea");
+
+droparea.addEventListener("dragover", e => {
+    e.preventDefault();
+    droparea.classList.add("active");
+});
+
+droparea.addEventListener("dragleave", () => {
+    droparea.classList.remove("active");
+});
+
+droparea.addEventListener("drop", e => {
+    droparea.classList.remove("active");
+
+    const newImg = draggedImg.cloneNode(true);
+    newImg.classList.add("drop-img");
+    newImg.draggable = false;
+
+    const rect = droparea.getBoundingClientRect();
+    const x = e.clientX - rect.left - 75;
+    const y = e.clientY - rect.top - 75;
+
+    newImg.style.left = x + "px";
+    newImg.style.top = y + "px";
+
+    enableDraggingInside(newImg);
+    droparea.appendChild(newImg);
+});
+
+function enableDraggingInside(img) {
+    let offsetX = 0, offsetY = 0;
+    let isDragging = false;
+
+    img.addEventListener("mousedown", e => {
+        isDragging = true;
+        offsetX = e.offsetX;
+        offsetY = e.offsetY;
+        img.style.cursor = "grabbing";
+    });
+
+    document.addEventListener("mousemove", e => {
+        if (!isDragging) return;
+        const rect = droparea.getBoundingClientRect();
+        img.style.left = (e.clientX - rect.left - offsetX) + "px";
+        img.style.top = (e.clientY - rect.top - offsetY) + "px";
+    });
+
+    document.addEventListener("mouseup", () => {
+        isDragging = false;
+        img.style.cursor = "grab";
+    });
+}
+</script>
+
+</body>
+</html>
