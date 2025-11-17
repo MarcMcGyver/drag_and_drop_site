@@ -2,104 +2,176 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Drag & Drop Bilder</title>
+<title>Geschenke mit Schleifen</title>
+
 <style>
-  body {
-    margin: 0;
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-  }
-  #left, #right {
-    width: 25%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    align-items: center;
-    background: #f0f0f0;
-    padding: 10px;
-  }
-  #center {
-    flex: 1;
-    position: relative;
-    background: #fff;
-    border: 2px dashed #ccc;
-  }
-  .draggable {
-    width: 100px;
-    height: 100px;
-    touch-action: none; /* wichtig für Touch-Drag */
-    position: absolute;
-    cursor: grab;
-  }
+    body {
+        margin: 0;
+        padding: 15px;
+        background: #f0f0f0;
+        font-family: Arial, sans-serif;
+
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: stretch;
+        height: 100vh;
+        gap: 15px;
+        box-sizing: border-box;
+    }
+
+    .side {
+        width: 15%;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .side img {
+        width: 100%;
+        max-width: 180px;
+        border-radius: 10px;
+        border: 2px solid #aaa;
+        background: white;
+        cursor: grab;
+        touch-action: none;
+    }
+
+    .droparea {
+        width: 70%;
+        height: 100%;
+        background: white;
+        border: 3px dashed #777;
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    .droparea.active {
+        border-color: #4CAF50;
+    }
+
+    .drop-img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 2px solid #333;
+        position: absolute;
+        cursor: grab;
+        touch-action: none;
+    }
 </style>
 </head>
+
 <body>
 
-<div id="left">
-  <img src="bilder/bild1.png" class="draggable">
-  <img src="bilder/bild2.png" class="draggable">
-  <img src="bilder/bild3.png" class="draggable">
+<div class="side">
+    <img src="bilder/slice1.png">
+    <img src="bilder/slice2.png">
+    <img src="bilder/slice2.png">
 </div>
 
-<div id="center"></div>
+<div class="droparea" id="droparea"></div>
 
-<div id="right"></div>
+<div class="side">
+    <img src="bilder/slice4.png">
+    <img src="bilder/slice5.png">
+    <img src="bilder/slice6.png">
+</div>
 
 <script>
-let currentDrag = null;
-let offsetX = 0;
-let offsetY = 0;
+let draggedImg = null;
 
-function startDrag(e) {
-  currentDrag = e.target;
-  if (e.type === 'touchstart') {
-    const touch = e.touches[0];
-    offsetX = touch.clientX - currentDrag.offsetLeft;
-    offsetY = touch.clientY - currentDrag.offsetTop;
-  } else {
-    offsetX = e.offsetX;
-    offsetY = e.offsetY;
-  }
-  currentDrag.style.position = 'absolute';
-  currentDrag.style.zIndex = 1000;
-  document.body.appendChild(currentDrag);
-  e.preventDefault();
-}
-
-function moveDrag(e) {
-  if (!currentDrag) return;
-  let clientX, clientY;
-  if (e.type === 'touchmove') {
-    const touch = e.touches[0];
-    clientX = touch.clientX;
-    clientY = touch.clientY;
-  } else {
-    clientX = e.clientX;
-    clientY = e.clientY;
-  }
-  currentDrag.style.left = (clientX - offsetX) + 'px';
-  currentDrag.style.top = (clientY - offsetY) + 'px';
-}
-
-function endDrag(e) {
-  currentDrag = null;
-}
-
-// Maus-Events
-document.querySelectorAll('.draggable').forEach(el => {
-  el.addEventListener('mousedown', startDrag);
+// Drag & Drop für Desktop (Maus)
+document.querySelectorAll(".side img").forEach(img => {
+    img.addEventListener("dragstart", e => {
+        draggedImg = img;
+    });
 });
-document.addEventListener('mousemove', moveDrag);
-document.addEventListener('mouseup', endDrag);
 
-// Touch-Events
-document.querySelectorAll('.draggable').forEach(el => {
-  el.addEventListener('touchstart', startDrag);
+const droparea = document.getElementById("droparea");
+
+droparea.addEventListener("dragover", e => {
+    e.preventDefault();
+    droparea.classList.add("active");
 });
-document.addEventListener('touchmove', moveDrag);
-document.addEventListener('touchend', endDrag);
+
+droparea.addEventListener("dragleave", () => {
+    droparea.classList.remove("active");
+});
+
+droparea.addEventListener("drop", e => {
+    droparea.classList.remove("active");
+
+    const newImg = draggedImg.cloneNode(true);
+    newImg.classList.add("drop-img");
+    newImg.draggable = false;
+
+    const rect = droparea.getBoundingClientRect();
+    const x = e.clientX - rect.left - 50;
+    const y = e.clientY - rect.top - 50;
+
+    newImg.style.left = x + "px";
+    newImg.style.top = y + "px";
+
+    enableDraggingInside(newImg);
+    droparea.appendChild(newImg);
+});
+
+// Funktion, um Bilder innerhalb des Dropbereichs zu verschieben
+function enableDraggingInside(img) {
+    let offsetX = 0, offsetY = 0;
+    let isDragging = false;
+
+    // Maus
+    img.addEventListener("mousedown", e => {
+        isDragging = true;
+        offsetX = e.offsetX;
+        offsetY = e.offsetY;
+        img.style.cursor = "grabbing";
+    });
+
+    document.addEventListener("mousemove", e => {
+        if (!isDragging) return;
+        const rect = droparea.getBoundingClientRect();
+        img.style.left = (e.clientX - rect.left - offsetX) + "px";
+        img.style.top = (e.clientY - rect.top - offsetY) + "px";
+    });
+
+    document.addEventListener("mouseup", () => {
+        isDragging = false;
+        img.style.cursor = "grab";
+    });
+
+    // Touch
+    img.addEventListener("touchstart", e => {
+        isDragging = true;
+        const touch = e.touches[0];
+        const rect = img.getBoundingClientRect();
+        offsetX = touch.clientX - rect.left;
+        offsetY = touch.clientY - rect.top;
+        img.style.cursor = "grabbing";
+        e.preventDefault();
+    });
+
+    img.addEventListener("touchmove", e => {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        const rect = droparea.getBoundingClientRect();
+        img.style.left = (touch.clientX - rect.left - offsetX) + "px";
+        img.style.top = (touch.clientY - rect.top - offsetY) + "px";
+        e.preventDefault();
+    });
+
+    img.addEventListener("touchend", () => {
+        isDragging = false;
+        img.style.cursor = "grab";
+    });
+}
 </script>
 
 </body>
