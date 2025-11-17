@@ -50,7 +50,6 @@ body {
     border-radius: 15px;
     position: relative;
     overflow: hidden;
-    touch-action: none;
 }
 
 .drop-img {
@@ -60,8 +59,8 @@ body {
     border-radius: 10px;
     border: 2px solid #333;
     position: absolute;
-    cursor: grab;
     touch-action: none;
+    cursor: grab;
 }
 </style>
 </head>
@@ -84,59 +83,58 @@ body {
 <script>
 const droparea = document.getElementById('droparea');
 
-function createDraggable(img, x, y) {
-    const newImg = img.cloneNode(true);
+function createDraggable(imgSrc, startX, startY) {
+    const newImg = imgSrc.cloneNode(true);
     newImg.classList.add('drop-img');
     droparea.appendChild(newImg);
 
     const rect = droparea.getBoundingClientRect();
-    newImg.style.left = (x - rect.left - newImg.width/2) + 'px';
-    newImg.style.top = (y - rect.top - newImg.height/2) + 'px';
+    newImg.style.left = (startX - rect.left - newImg.width / 2) + 'px';
+    newImg.style.top = (startY - rect.top - newImg.height / 2) + 'px';
 
-    // Drag inside droparea
     let offsetX = 0, offsetY = 0, dragging = false;
 
-    function startDrag(clientX, clientY) {
+    function startDrag(x, y) {
         const rectImg = newImg.getBoundingClientRect();
-        offsetX = clientX - rectImg.left;
-        offsetY = clientY - rectImg.top;
+        offsetX = x - rectImg.left;
+        offsetY = y - rectImg.top;
         dragging = true;
     }
 
-    function moveDrag(clientX, clientY) {
+    function moveDrag(x, y) {
         if (!dragging) return;
         const rectArea = droparea.getBoundingClientRect();
-        newImg.style.left = (clientX - rectArea.left - offsetX) + 'px';
-        newImg.style.top = (clientY - rectArea.top - offsetY) + 'px';
+        newImg.style.left = (x - rectArea.left - offsetX) + 'px';
+        newImg.style.top = (y - rectArea.top - offsetY) + 'px';
     }
 
-    function stopDrag() {
-        dragging = false;
-    }
+    function stopDrag() { dragging = false; }
 
     // Mouse Events
-    newImg.addEventListener('mousedown', e => { startDrag(e.clientX, e.clientY); });
-    document.addEventListener('mousemove', e => { moveDrag(e.clientX, e.clientY); });
-    document.addEventListener('mouseup', stopDrag);
+    newImg.addEventListener('mousedown', e => { startDrag(e.clientX, e.clientY); e.preventDefault(); });
+    newImg.addEventListener('mousemove', e => { moveDrag(e.clientX, e.clientY); });
+    newImg.addEventListener('mouseup', stopDrag);
+    newImg.addEventListener('mouseleave', stopDrag);
 
-    // Touch Events
-    newImg.addEventListener('touchstart', e => { 
+    // Touch Events (direkt am Bild)
+    newImg.addEventListener('touchstart', e => {
         const t = e.touches[0];
-        startDrag(t.clientX, t.clientY); 
+        startDrag(t.clientX, t.clientY);
+        e.preventDefault();
     });
-    document.addEventListener('touchmove', e => { 
-        const t = e.touches[0]; 
-        moveDrag(t.clientX, t.clientY); 
-    }, { passive:false });
-    document.addEventListener('touchend', stopDrag);
+    newImg.addEventListener('touchmove', e => {
+        const t = e.touches[0];
+        moveDrag(t.clientX, t.clientY);
+        e.preventDefault();
+    });
+    newImg.addEventListener('touchend', stopDrag);
 }
 
-// Seitenbilder Touch/Maus Drag starten
 document.querySelectorAll('.side img').forEach(img => {
     img.addEventListener('mousedown', e => { createDraggable(img, e.clientX, e.clientY); });
-    img.addEventListener('touchstart', e => { 
+    img.addEventListener('touchstart', e => {
         const t = e.touches[0];
-        createDraggable(img, t.clientX, t.clientY); 
+        createDraggable(img, t.clientX, t.clientY);
         e.preventDefault();
     });
 });
