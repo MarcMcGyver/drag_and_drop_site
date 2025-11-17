@@ -4,81 +4,77 @@
 <meta charset="UTF-8">
 <title>Geschenke mit Schleifen</title>
 <style>
-    html, body {
-        margin: 0;
-        padding: 15px;
-        height: 100%;
-        background: #f0f0f0;
-        font-family: Arial, sans-serif;
-        box-sizing: border-box;
-    }
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #f0f0f0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
 
-    body {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: stretch;
-        gap: 15px;
-    }
+body {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 15px;
+    padding: 15px;
+    box-sizing: border-box;
+}
 
-    .side {
-        width: 15%;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        justify-content: center;
-        align-items: center;
-    }
+.side {
+    width: 15%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+}
 
-    .side img {
-        width: 100%;
-        max-width: 180px;
-        border-radius: 10px;
-        border: 2px solid #aaa;
-        background: white;
-        cursor: grab;
-    }
+.side img {
+    width: 100%;
+    max-width: 180px;
+    border-radius: 10px;
+    border: 2px solid #aaa;
+    background: white;
+    cursor: pointer;
+    touch-action: none;
+}
 
-    .droparea {
-        width: 70%;
-        height: 100%;
-        background: white;
-        border: 3px dashed #777;
-        border-radius: 15px;
-        position: relative;
-        overflow: hidden;
-        touch-action: none; /* wichtig für iPad */
-    }
+.droparea {
+    width: 70%;
+    height: 100%;
+    background: white;
+    border: 3px dashed #777;
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+}
 
-    .droparea.active {
-        border-color: #4CAF50;
-    }
-
-    .drop-img {
-        width: 100px;
-        height: 100px;
-        object-fit: cover;
-        border-radius: 10px;
-        border: 2px solid #333;
-        position: absolute;
-        cursor: grab;
-        touch-action: none;
-    }
+.drop-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid #333;
+    position: absolute;
+    cursor: grab;
+    touch-action: none;
+}
 </style>
 </head>
 <body>
 
-<!-- Linke Bilder -->
 <div class="side">
     <img src="bilder/slice1.png">
     <img src="bilder/slice2.png">
     <img src="bilder/slice3.png">
 </div>
 
-<!-- Drop-Bereich -->
 <div class="droparea" id="droparea"></div>
 
-<!-- Rechte Bilder -->
 <div class="side">
     <img src="bilder/slice4.png">
     <img src="bilder/slice5.png">
@@ -88,84 +84,62 @@
 <script>
 const droparea = document.getElementById('droparea');
 
-function enableDraggingInside(img) {
-    let offsetX = 0, offsetY = 0;
-    let isDragging = false;
-
-    // Maus
-    img.addEventListener('mousedown', e => {
-        isDragging = true;
-        offsetX = e.offsetX;
-        offsetY = e.offsetY;
-        img.style.cursor = 'grabbing';
-    });
-
-    document.addEventListener('mousemove', e => {
-        if (!isDragging) return;
-        const rect = droparea.getBoundingClientRect();
-        img.style.left = (e.clientX - rect.left - offsetX) + 'px';
-        img.style.top = (e.clientY - rect.top - offsetY) + 'px';
-    });
-
-    document.addEventListener('mouseup', () => {
-        isDragging = false;
-        img.style.cursor = 'grab';
-    });
-
-    // Touch
-    img.addEventListener('touchstart', e => {
-        isDragging = true;
-        const touch = e.touches[0];
-        const rect = img.getBoundingClientRect();
-        offsetX = touch.clientX - rect.left;
-        offsetY = touch.clientY - rect.top;
-        img.style.cursor = 'grabbing';
-        e.preventDefault();
-    });
-
-    document.addEventListener('touchmove', e => {
-        if (!isDragging) return;
-        const touch = e.touches[0];
-        const rect = droparea.getBoundingClientRect();
-        img.style.left = (touch.clientX - rect.left - offsetX) + 'px';
-        img.style.top = (touch.clientY - rect.top - offsetY) + 'px';
-    }, { passive: false });
-
-    document.addEventListener('touchend', () => {
-        isDragging = false;
-        img.style.cursor = 'grab';
-    });
-}
-
-// Drag von den Seitenbildern in Droparea
-document.querySelectorAll('.side img').forEach(img => {
-
-    // Maus Drag
-    img.addEventListener('mousedown', e => {
-        createDraggableClone(img, e.clientX, e.clientY);
-    });
-
-    // Touch Drag
-    img.addEventListener('touchstart', e => {
-        const touch = e.touches[0];
-        createDraggableClone(img, touch.clientX, touch.clientY);
-        e.preventDefault();
-    });
-});
-
-function createDraggableClone(original, clientX, clientY) {
-    const newImg = original.cloneNode(true);
+function createDraggable(img, x, y) {
+    const newImg = img.cloneNode(true);
     newImg.classList.add('drop-img');
-    newImg.draggable = false;
-
     droparea.appendChild(newImg);
 
     const rect = droparea.getBoundingClientRect();
-    newImg.style.left = (clientX - rect.left - newImg.width/2) + 'px';
-    newImg.style.top = (clientY - rect.top - newImg.height/2) + 'px';
+    newImg.style.left = (x - rect.left - newImg.width/2) + 'px';
+    newImg.style.top = (y - rect.top - newImg.height/2) + 'px';
 
-    enableDraggingInside(newImg);
+    // Drag inside droparea
+    let offsetX = 0, offsetY = 0, dragging = false;
+
+    function startDrag(clientX, clientY) {
+        const rectImg = newImg.getBoundingClientRect();
+        offsetX = clientX - rectImg.left;
+        offsetY = clientY - rectImg.top;
+        dragging = true;
+    }
+
+    function moveDrag(clientX, clientY) {
+        if (!dragging) return;
+        const rectArea = droparea.getBoundingClientRect();
+        newImg.style.left = (clientX - rectArea.left - offsetX) + 'px';
+        newImg.style.top = (clientY - rectArea.top - offsetY) + 'px';
+    }
+
+    function stopDrag() {
+        dragging = false;
+    }
+
+    // Mouse Events
+    newImg.addEventListener('mousedown', e => { startDrag(e.clientX, e.clientY); });
+    document.addEventListener('mousemove', e => { moveDrag(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', stopDrag);
+
+    // Touch Events
+    newImg.addEventListener('touchstart', e => { 
+        const t = e.touches[0];
+        startDrag(t.clientX, t.clientY); 
+    });
+    document.addEventListener('touchmove', e => { 
+        const t = e.touches[0]; 
+        moveDrag(t.clientX, t.clientY); 
+    }, { passive:false });
+    document.addEventListener('touchend', stopDrag);
 }
+
+// Seitenbilder Touch/Maus Drag starten
+document.querySelectorAll('.side img').forEach(img => {
+    img.addEventListener('mousedown', e => { createDraggable(img, e.clientX, e.clientY); });
+    img.addEventListener('touchstart', e => { 
+        const t = e.touches[0];
+        createDraggable(img, t.clientX, t.clientY); 
+        e.preventDefault();
+    });
+});
 </script>
 
 </body>
