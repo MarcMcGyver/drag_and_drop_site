@@ -31,7 +31,7 @@ body {
     background:white;
     border:3px dashed #777;
     border-radius:15px;
-    position:relative;
+    position:relative; /* wichtig für absolute Positionierung der Kinder */
     overflow:hidden;
 }
 .drop-img {
@@ -39,7 +39,6 @@ body {
     object-fit:cover;
     border-radius:10px;
     position:absolute;
-    touch-action:none;
     cursor:grab;
 }
 @media (max-width:768px){
@@ -68,84 +67,89 @@ body {
 <script>
 const droparea = document.getElementById('droparea');
 
-// Macht ein Bild draggable und löschbar
-function makeDraggable(img) {
-    let dragging = false;
-    let offsetX=0, offsetY=0;
+// Funktion zum Draggen & Löschen
+function makeDraggable(img){
+    let dragging=false, offsetX=0, offsetY=0;
 
-    function startDrag(clientX, clientY) {
-        dragging = true;
-        const rect = img.getBoundingClientRect();
-        offsetX = clientX - rect.left;
-        offsetY = clientY - rect.top;
+    function startDrag(x,y){
+        dragging=true;
+        const rect=img.getBoundingClientRect();
+        offsetX=x - rect.left;
+        offsetY=y - rect.top;
     }
-
-    function moveDrag(clientX, clientY) {
+    function moveDrag(x,y){
         if(!dragging) return;
-        const rect = droparea.getBoundingClientRect();
-        let x = clientX - rect.left - offsetX;
-        let y = clientY - rect.top - offsetY;
-        // Grenzen innerhalb Droparea
-        x = Math.max(0, Math.min(x, droparea.clientWidth - img.clientWidth));
-        y = Math.max(0, Math.min(y, droparea.clientHeight - img.clientHeight));
-        img.style.left = x + 'px';
-        img.style.top = y + 'px';
+        const rect=droparea.getBoundingClientRect();
+        let left = x - rect.left - offsetX;
+        let top  = y - rect.top - offsetY;
+        left = Math.max(0, Math.min(left, droparea.clientWidth - img.clientWidth));
+        top  = Math.max(0, Math.min(top, droparea.clientHeight - img.clientHeight));
+        img.style.left = left + 'px';
+        img.style.top  = top  + 'px';
     }
-
-    function endDrag() { dragging = false; }
+    function endDrag(){ dragging=false; }
 
     // Desktop
-    img.addEventListener('mousedown', e=>{
-        startDrag(e.clientX, e.clientY);
-        e.preventDefault();
-    });
-    document.addEventListener('mousemove', e=>moveDrag(e.clientX, e.clientY));
+    img.addEventListener('mousedown', e=>{startDrag(e.clientX,e.clientY); e.preventDefault();});
+    document.addEventListener('mousemove', e=>moveDrag(e.clientX,e.clientY));
     document.addEventListener('mouseup', endDrag);
 
     // Touch
     img.addEventListener('touchstart', e=>{
-        const touch = e.touches[0];
-        startDrag(touch.clientX, touch.clientY);
+        const t=e.touches[0];
+        startDrag(t.clientX,t.clientY);
         e.preventDefault();
     }, {passive:false});
     document.addEventListener('touchmove', e=>{
         if(!dragging) return;
-        const touch = e.touches[0];
-        moveDrag(touch.clientX, touch.clientY);
+        const t=e.touches[0];
+        moveDrag(t.clientX,t.clientY);
         e.preventDefault();
     }, {passive:false});
     document.addEventListener('touchend', endDrag);
 
     // Doppeltap / dblclick zum Entfernen
     let lastTap=0;
-    img.addEventListener('touchend', e=>{
-        const now = Date.now();
-        if(now - lastTap < 300) img.remove();
-        lastTap = now;
+    img.addEventListener('touchend', ()=>{
+        const now=Date.now();
+        if(now-lastTap<300) img.remove();
+        lastTap=now;
     });
     img.addEventListener('dblclick', ()=>img.remove());
 }
 
-// Alle Bilder beider Seiten aktivieren
-document.querySelectorAll('.side img').forEach(img=>{
-    img.addEventListener('mousedown', startAdd);
-    img.addEventListener('touchstart', startAdd, {passive:false});
-});
-
-function startAdd(e){
-    const isTouch = e.type.startsWith('touch');
-    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
-    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+// Funktion um neues Bild zu droppen
+function addImage(e){
+    const isTouch=e.type.startsWith('touch');
+    const x = isTouch ? e.touches[0].clientX : e.clientX;
+    const y = isTouch ? e.touches[0].clientY : e.clientY;
 
     const newImg = this.cloneNode(true);
     newImg.classList.add('drop-img');
+    newImg.style.position='absolute';
+
+    // Position relativ zur Droparea
     const rect = droparea.getBoundingClientRect();
-    newImg.style.left = (clientX - rect.left - 50) + 'px';
-    newImg.style.top = (clientY - rect.top - 50) + 'px';
+    let left = x - rect.left - newImg.width/2;
+    let top  = y - rect.top - newImg.height/2;
+
+    left = Math.max(0, Math.min(left, droparea.clientWidth - newImg.width));
+    top  = Math.max(0, Math.min(top, droparea.clientHeight - newImg.height));
+
+    newImg.style.left = left + 'px';
+    newImg.style.top  = top + 'px';
+
     droparea.appendChild(newImg);
     makeDraggable(newImg);
+
     e.preventDefault();
 }
+
+// Alle Bilder aus beiden Seiten aktivieren
+document.querySelectorAll('.side img').forEach(img=>{
+    img.addEventListener('mousedown', addImage);
+    img.addEventListener('touchstart', addImage, {passive:false});
+});
 </script>
 
 </body>
