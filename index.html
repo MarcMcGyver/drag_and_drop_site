@@ -4,134 +4,92 @@
 <meta charset="UTF-8">
 <title>Geschenke mit Schleifen</title>
 <style>
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background: #f0f0f0;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
-}
-
-body {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: stretch;
-    gap: 15px;
-    padding: 15px;
-    box-sizing: border-box;
-}
-
-.side {
-    width: 15%;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    justify-content: center;
-    align-items: center;
-}
-
-.side img {
-    width: 100%;
-    max-width: 180px;
-    border-radius: 10px;
-    border: 2px solid #aaa;
-    background: white;
-    cursor: pointer;
-    touch-action: none;
-}
-
-.droparea {
-    width: 70%;
-    height: 100%;
-    background: white;
-    border: 3px dashed #777;
-    border-radius: 15px;
-    position: relative;
-    overflow: hidden;
-}
-
-.drop-img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 10px;
-    border: 2px solid #333;
-    position: absolute;
-    touch-action: none;
-    cursor: grab;
-}
+html, body { margin:0; padding:0; height:100%; background:#f0f0f0; font-family:Arial; }
+body { display:flex; flex-direction:row; gap:15px; padding:15px; box-sizing:border-box; height:100vh; }
+.side { width:15%; display:flex; flex-direction:column; gap:20px; justify-content:center; align-items:center; }
+.side img { width:100%; max-width:180px; border-radius:10px; border:2px solid #aaa; background:white; cursor:pointer; touch-action:none; }
+.droparea { width:70%; height:100%; background:white; border:3px dashed #777; border-radius:15px; position:relative; overflow:hidden; }
+.drop-img { width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #333; position:absolute; touch-action:none; cursor:grab; }
 </style>
 </head>
 <body>
 
 <div class="side">
-    <img src="bilder/Slice1.png">
-    <img src="bilder/Slice2.png">
-    <img src="bilder/Slice3.png">
+    <img src="bilder/slice1.png">
+    <img src="bilder/slice2.png">
+    <img src="bilder/slice3.png">
 </div>
 
 <div class="droparea" id="droparea"></div>
 
 <div class="side">
-    <img src="bilder/Slice4.png">
-    <img src="bilder/Slice5.png">
-    <img src="bilder/Slice6.png">
+    <img src="bilder/slice4.png">
+    <img src="bilder/slice5.png">
+    <img src="bilder/slice6.png">
 </div>
 
 <script>
 const droparea = document.getElementById('droparea');
 
-function createDraggable(imgSrc, startX, startY) {
-    const newImg = imgSrc.cloneNode(true);
+function createDraggable(img, clientX, clientY) {
+    const newImg = img.cloneNode(true);
     newImg.classList.add('drop-img');
     droparea.appendChild(newImg);
 
     const rect = droparea.getBoundingClientRect();
-    newImg.style.left = (startX - rect.left - newImg.width / 2) + 'px';
-    newImg.style.top = (startY - rect.top - newImg.height / 2) + 'px';
+    // Initiale Position: relativ zur Dropfläche
+    let left = clientX - rect.left - newImg.width/2;
+    let top = clientY - rect.top - newImg.height/2;
+
+    left = Math.max(0, Math.min(rect.width - newImg.width, left));
+    top = Math.max(0, Math.min(rect.height - newImg.height, top));
+
+    newImg.style.left = left + 'px';
+    newImg.style.top = top + 'px';
 
     let offsetX = 0, offsetY = 0, dragging = false;
 
-    function startDrag(x, y) {
-        const rectImg = newImg.getBoundingClientRect();
-        offsetX = x - rectImg.left;
-        offsetY = y - rectImg.top;
+    function startDrag(cX, cY) {
+        const imgRect = newImg.getBoundingClientRect();
+        offsetX = cX - imgRect.left;
+        offsetY = cY - imgRect.top;
         dragging = true;
+        newImg.style.cursor = 'grabbing';
     }
 
-    function moveDrag(x, y) {
+    function moveDrag(cX, cY) {
         if (!dragging) return;
-        const rectArea = droparea.getBoundingClientRect();
-        newImg.style.left = (x - rectArea.left - offsetX) + 'px';
-        newImg.style.top = (y - rectArea.top - offsetY) + 'px';
+        let newLeft = cX - droparea.getBoundingClientRect().left - offsetX;
+        let newTop = cY - droparea.getBoundingClientRect().top - offsetY;
+
+        newLeft = Math.max(0, Math.min(droparea.clientWidth - newImg.width, newLeft));
+        newTop = Math.max(0, Math.min(droparea.clientHeight - newImg.height, newTop));
+
+        newImg.style.left = newLeft + 'px';
+        newImg.style.top = newTop + 'px';
     }
 
-    function stopDrag() { dragging = false; }
+    function stopDrag() {
+        dragging = false;
+        newImg.style.cursor = 'grab';
+    }
 
-    // Mouse Events
     newImg.addEventListener('mousedown', e => { startDrag(e.clientX, e.clientY); e.preventDefault(); });
-    newImg.addEventListener('mousemove', e => { moveDrag(e.clientX, e.clientY); });
-    newImg.addEventListener('mouseup', stopDrag);
-    newImg.addEventListener('mouseleave', stopDrag);
+    document.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+    document.addEventListener('mouseup', stopDrag);
 
-    // Touch Events (direkt am Bild)
-    newImg.addEventListener('touchstart', e => {
-        const t = e.touches[0];
-        startDrag(t.clientX, t.clientY);
-        e.preventDefault();
+    newImg.addEventListener('touchstart', e => { 
+        const t = e.touches[0]; startDrag(t.clientX, t.clientY); e.preventDefault(); 
     });
-    newImg.addEventListener('touchmove', e => {
-        const t = e.touches[0];
-        moveDrag(t.clientX, t.clientY);
-        e.preventDefault();
+    newImg.addEventListener('touchmove', e => { 
+        const t = e.touches[0]; moveDrag(t.clientX, t.clientY); e.preventDefault(); 
     });
     newImg.addEventListener('touchend', stopDrag);
 }
 
+// Klick oder Touch auf Sidebar-Bilder
 document.querySelectorAll('.side img').forEach(img => {
-    img.addEventListener('mousedown', e => { createDraggable(img, e.clientX, e.clientY); });
+    img.addEventListener('mousedown', e => createDraggable(img, e.clientX, e.clientY));
     img.addEventListener('touchstart', e => {
         const t = e.touches[0];
         createDraggable(img, t.clientX, t.clientY);
